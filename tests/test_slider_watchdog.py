@@ -9,6 +9,7 @@
 线程调用 playwright.stop() 会直接抛「Cannot switch to a different thread」。
 """
 
+import os
 import threading
 import time
 import unittest
@@ -117,9 +118,16 @@ class KillBrowserProcessTests(unittest.TestCase):
             def kill(self):
                 killed.append(self.info['cmdline'])
 
+        # 用和生产代码同样的方式拼路径（utils/xianyu_slider_stealth.py 里是
+        # os.path.join(os.getcwd(), 'browser_data', f'slider_{id}')）。
+        # 硬编码 "/app/browser_data/..." 只在 POSIX 上成立，Windows 上
+        # Chrome 的 --user-data-dir 是反斜杠，匹配不上会误判为"没杀到"。
+        own_dir = os.path.join(os.getcwd(), 'browser_data', f'slider_{instance.pure_user_id}')
+        other_dir = os.path.join(os.getcwd(), 'browser_data', f'slider_{other.pure_user_id}')
+
         procs = [
-            FakeProc(['chrome', f'--user-data-dir=/app/browser_data/slider_{instance.pure_user_id}']),
-            FakeProc(['chrome', f'--user-data-dir=/app/browser_data/slider_{other.pure_user_id}']),
+            FakeProc(['chrome', f'--user-data-dir={own_dir}']),
+            FakeProc(['chrome', f'--user-data-dir={other_dir}']),
             FakeProc(['chrome', '--user-data-dir=/Users/me/Library/Application Support/Google/Chrome']),
         ]
 
